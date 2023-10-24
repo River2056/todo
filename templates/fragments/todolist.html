@@ -1,0 +1,24 @@
+<div id="todo-list">
+    {{ range .todoList }}
+    <div class="card p-3 mb-3">
+        <div class="row btn-group">
+            <div class="col-10">
+                <h4 class="card-title">
+                    {{ .Content }}
+                </h4>
+            </div>
+
+            <div class="col-1">
+                <input id="{{.Id}}" class="btn-check" type="checkbox" />
+                <label style="width: 5rem" class="btn btn-outline-primary" for="{{.Id}}">
+                    ✓        
+                </label>
+            </div>
+
+            <div class="col-1">
+                <input style="width: 5rem" id="{{.Id}}" class="btn btn-outline-danger" type="button" value="❌" />
+            </div>
+        </div>
+    </div>
+    {{ end }}
+</div>
