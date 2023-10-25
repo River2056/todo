@@ -5,12 +5,15 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"strings"
 	"todo/assets"
 	"todo/models"
 
 	"github.com/gin-gonic/gin"
 )
+
+var editTodo models.TodoItem
 
 func main() {
 	todoList := make([]models.TodoItem, 0)
@@ -29,6 +32,13 @@ func main() {
 		})
 	})
 
+    router.GET("/fetch-add-todo", func(c *gin.Context) {
+        c.HTML(http.StatusOK, "addtodo.html", gin.H{
+            "editTodo": models.TodoItem{},
+            "isEdit": false,
+        })
+    })
+
 	router.POST("/add", func(c *gin.Context) {
 		jsonBytes, err := ioutil.ReadAll(c.Request.Body)
 		if err != nil {
@@ -43,11 +53,47 @@ func main() {
 			IsDone:  false,
 		}
 		todoList = append([]models.TodoItem{t}, todoList...)
+        editTodo = models.TodoItem{}
 
 		c.HTML(http.StatusOK, "todolist.html", gin.H{
 			"todoList": todoList,
 		})
 	})
+
+	router.DELETE("/delete/:id", func(c *gin.Context) {
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			panic(err)
+		}
+
+		for idx, todo := range todoList {
+			if todo.Id == id {
+				todoList = append(todoList[:idx], todoList[idx+1:]...)
+			}
+		}
+
+		c.HTML(http.StatusOK, "todolist.html", gin.H{
+			"todoList": todoList,
+		})
+	})
+
+    router.PUT("/edit/:id", func(c *gin.Context) {
+        id, err := strconv.Atoi(c.Param("id"))
+        if err != nil {
+            panic(err)
+        }
+
+        for idx, todo := range todoList {
+            if todo.Id == id {
+                todoList = append(todoList[:idx], todoList[idx+1:]...)
+                c.HTML(http.StatusOK, "addtodo.html", gin.H{
+                    "editTodo": todo,
+                    "isEdit": true,
+                })
+                return
+            }
+        }
+    })
 
 	router.Run(":9000")
 }

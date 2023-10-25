@@ -26,17 +26,7 @@
         <div class="h1">Todo List</div>
     </header>
     <div class="container">
-        <form hx-post="/add" hx-target="#todo-list" hx-swap="outerHTML" hx-on::after-request="this.reset()"
-            class="row form-group">
-            <div class="col-9">
-                <input class="form-control p-3" name="new-todo" placeholder="Enter your todos..." required />
-            </div>
-            <div class="col-3">
-                <button class="form-control btn btn-primary p-3">
-                    Add
-                </button>
-            </div>
-        </form>
+        <form hx-trigger="load" hx-get="/fetch-add-todo" hx-swap="outerHTML"></form>
 
         <div hx-trigger="load" hx-get="/fetch-todos" hx-swap="outerHTML" id="todo-list">
         </div>

@@ -1,0 +1,12 @@
+<form id="add-todo" hx-post="/add" hx-target="#todo-list" hx-swap="outerHTML" hx-on::after-request="this.reset()"
+    class="row form-group">
+    <div class="col-9">
+        <input style="font-size: 1.2rem" class="form-control p-3" name="new-todo" value="{{.editTodo.Content}}"
+            placeholder="Enter your todos..." required />
+    </div>
+    <div class="col-3">
+        <button class="form-control btn btn-primary p-3">
+            Add
+        </button>
+    </div>
+</form>

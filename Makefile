@@ -1,6 +1,9 @@
 dev:
-	gin -i run main.go
+	CompileDaemon -command="./todo" -include="*.html"
 
 release:
 	go build
 	./todo
+
+compile:
+	CompileDaemon -command="./todo"
