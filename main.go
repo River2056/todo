@@ -3,7 +3,6 @@ package main
 import (
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,12 +10,27 @@ import (
 	"todo/models"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
+var todoList []models.TodoItem
 var editTodo models.TodoItem
+var DB *gorm.DB
+
+func init() {
+	db, err := gorm.Open(sqlite.Open("./data.db"), &gorm.Config{})
+	if err != nil {
+		// database not exists
+		panic(err)
+	}
+
+	db.AutoMigrate(&models.TodoItem{})
+	DB = db
+}
 
 func main() {
-	todoList := make([]models.TodoItem, 0)
+	todoList = make([]models.TodoItem, 0)
 
 	allHtmls := assets.GetAllTemplates()
 	router := gin.Default()
@@ -27,17 +41,18 @@ func main() {
 	})
 
 	router.GET("/fetch-todos", func(c *gin.Context) {
+		DB.Find(&todoList)
 		c.HTML(http.StatusOK, "todolist.html", gin.H{
 			"todoList": todoList,
 		})
 	})
 
-    router.GET("/fetch-add-todo", func(c *gin.Context) {
-        c.HTML(http.StatusOK, "addtodo.html", gin.H{
-            "editTodo": models.TodoItem{},
-            "isEdit": false,
-        })
-    })
+	router.GET("/fetch-add-todo", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "addtodo.html", gin.H{
+			"editTodo": models.TodoItem{},
+			"isEdit":   false,
+		})
+	})
 
 	router.POST("/add", func(c *gin.Context) {
 		jsonBytes, err := ioutil.ReadAll(c.Request.Body)
@@ -47,13 +62,14 @@ func main() {
 		jsonData := string(jsonBytes)
 		jsonData = strings.Replace(jsonData, "%20", " ", -1)
 		jsonArr := strings.Split(jsonData, "=")
+
 		t := models.TodoItem{
-			Id:      rand.Int(),
 			Content: jsonArr[1],
 			IsDone:  false,
 		}
-		todoList = append([]models.TodoItem{t}, todoList...)
-        editTodo = models.TodoItem{}
+		DB.Create(&t)
+		DB.Find(&todoList)
+		editTodo = models.TodoItem{}
 
 		c.HTML(http.StatusOK, "todolist.html", gin.H{
 			"todoList": todoList,
@@ -66,34 +82,31 @@ func main() {
 			panic(err)
 		}
 
-		for idx, todo := range todoList {
-			if todo.Id == id {
-				todoList = append(todoList[:idx], todoList[idx+1:]...)
-			}
-		}
+		DB.Delete(&models.TodoItem{}, id)
+		DB.Find(&todoList)
 
 		c.HTML(http.StatusOK, "todolist.html", gin.H{
 			"todoList": todoList,
 		})
 	})
 
-    router.PUT("/edit/:id", func(c *gin.Context) {
-        id, err := strconv.Atoi(c.Param("id"))
-        if err != nil {
-            panic(err)
-        }
+	router.PUT("/edit/:id", func(c *gin.Context) {
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			panic(err)
+		}
 
-        for idx, todo := range todoList {
-            if todo.Id == id {
-                todoList = append(todoList[:idx], todoList[idx+1:]...)
-                c.HTML(http.StatusOK, "addtodo.html", gin.H{
-                    "editTodo": todo,
-                    "isEdit": true,
-                })
-                return
-            }
-        }
-    })
+		for idx, todo := range todoList {
+			if todo.Id == id {
+				todoList = append(todoList[:idx], todoList[idx+1:]...)
+				c.HTML(http.StatusOK, "addtodo.html", gin.H{
+					"editTodo": todo,
+					"isEdit":   true,
+				})
+				return
+			}
+		}
+	})
 
 	router.Run(":9000")
 }
